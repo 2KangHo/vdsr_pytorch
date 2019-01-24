@@ -65,9 +65,19 @@ def get_training_set(upscale_factor, add_noise=None, noise_std=3.0):
                              noise_std=noise_std)
 
 
-def get_test_set(upscale_factor):
+def get_validation_set(upscale_factor):
     root_dir = download_bsd300()
-    test_dir = join(root_dir, "test")
+    validation_dir = join(root_dir, "test")
+    crop_size = calculate_valid_crop_size(256, upscale_factor)
+
+    return DatasetFromFolder(validation_dir,
+                             input_transform=input_transform(
+                                 crop_size, upscale_factor),
+                             target_transform=target_transform(crop_size))
+
+
+def get_test_set(upscale_factor):
+    test_dir = "dataset/Urban100"
     crop_size = calculate_valid_crop_size(256, upscale_factor)
 
     return DatasetFromFolder(test_dir,
