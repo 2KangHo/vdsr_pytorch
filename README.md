@@ -12,11 +12,27 @@ progressive영상을 interlaced영상으로 만드는느낌.
 
 ## Training
 
-    > python main.py --upscale_factor 2 --batch_size 40 --cuda --test_batch_size 20 --epochs 100 --lr 0.01
+    > python main.py --batch_size 40 --test_batch_size 10 --epochs 100 --cuda --gpuids 0 --upscale_factor 2
 
 or
 
-    > python3 main.py --upscale_factor 2 --batch_size 40 --cuda --test_batch_size 20 --epochs 100 --lr 0.01
+    > python3 main.py --batch_size 40 --test_batch_size 10 --epochs 100 --cuda --gpuids 0 --upscale_factor 2
+
+## Test
+
+    > python main.py --batch_size 40 --test_batch_size 10 --epochs 100 --cuda --gpuids 0 --upscale_factor 2 --test --model model_epoch_100.pth
+
+or
+
+    > python3 main.py --batch_size 40 --test_batch_size 10 --epochs 100 --cuda --gpuids 0 --upscale_factor 2 --test --model model_epoch_100.pth
+
+## Sample Usage
+
+    > python run.py --input_image test.jpg --scale_factor 2 --model model_epoch_100.pth --cuda --output_filename <output_filename>
+
+or
+
+    > python3 run.py --input_image test.jpg --scale_factor 2 --model model_epoch_100.pth --cuda --output_filename <output_filename>
 
 ## 주의
 
