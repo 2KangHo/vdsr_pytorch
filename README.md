@@ -28,11 +28,11 @@ or
 
 ## Sample Usage
 
-    > python run.py --input_image test.jpg --scale_factor 2 --model model_epoch_100.pth --cuda --output_filename <output_filename>
+    > python run.py --input_image test_scale2x.jpg --scale_factor 2 --model model_epoch_100.pth --cuda --gpuids 0 --output_filename test_scale2x_out.jpg
 
 or
 
-    > python3 run.py --input_image test.jpg --scale_factor 2 --model model_epoch_100.pth --cuda --output_filename <output_filename>
+    > python3 run.py --input_image test_scale2x.jpg --scale_factor 2 --model model_epoch_100.pth --cuda --gpuids 0 --output_filename test_scale2x_out.jpg
 
 ## 주의
 
