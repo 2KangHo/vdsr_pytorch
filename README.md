@@ -1,6 +1,6 @@
 # vdsr_pytorch
 
-PyTorch Implementation A
+PyTorch Implementation  
 1대1비율의 사진을 2대1비율의 사진으로 만듦.  
 progressive영상을 interlaced영상으로 만드는느낌.
 
