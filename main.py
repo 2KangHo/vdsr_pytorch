@@ -1,8 +1,10 @@
 from __future__ import print_function
 import argparse
 from math import log10, sqrt
+import time
 import os
 from os import errno
+from os.path import join
 
 import torch
 import torch.nn as nn
@@ -10,7 +12,7 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-from data import get_training_set, get_test_set
+from data import get_training_set, get_validation_set, get_test_set
 from model import VDSR
 
 
@@ -41,43 +43,62 @@ parser.add_argument('--add_noise', action='store_true',
                     help='add gaussian noise?')
 parser.add_argument('--noise_std', type=float, default=3.0,
                     help='standard deviation of gaussian noise')
-opt = parser.parse_args()
-
-opt.gpuids = list(map(int, opt.gpuids))
-print(opt)
-
-
-use_cuda = opt.cuda
-if use_cuda and not torch.cuda.is_available():
-    raise Exception("No GPU found, please run without --cuda")
+parser.add_argument('--test', action='store_true', help='test mode')
+parser.add_argument('--model', default='', type=str, metavar='PATH',
+                    help='path to test or resume model')
 
 
-cudnn.benchmark = True
+def main():
+    global opt
+    opt = parser.parse_args()
+    opt.gpuids = list(map(int, opt.gpuids))
 
+    print(opt)
 
-train_set = get_training_set(opt.upscale_factor, opt.add_noise, opt.noise_std)
-test_set = get_test_set(opt.upscale_factor)
-training_data_loader = DataLoader(
-    dataset=train_set, num_workers=opt.threads, batch_size=opt.batch_size, shuffle=True)
-testing_data_loader = DataLoader(
-    dataset=test_set, num_workers=opt.threads, batch_size=opt.test_batch_size, shuffle=False)
+    if opt.cuda and not torch.cuda.is_available():
+        raise Exception("No GPU found, please run without --cuda")
+    cudnn.benchmark = True
 
+    train_set = get_training_set(
+        opt.upscale_factor, opt.add_noise, opt.noise_std)
+    validation_set = get_validation_set(opt.upscale_factor)
+    test_set = get_test_set(opt.upscale_factor)
+    training_data_loader = DataLoader(
+        dataset=train_set, num_workers=opt.threads, batch_size=opt.batch_size, shuffle=True)
+    validating_data_loader = DataLoader(
+        dataset=validation_set, num_workers=opt.threads, batch_size=opt.test_batch_size, shuffle=False)
+    testing_data_loader = DataLoader(
+        dataset=test_set, num_workers=opt.threads, batch_size=opt.test_batch_size, shuffle=False)
 
-vdsr = VDSR()
-criterion = nn.MSELoss()
+    model = VDSR()
+    criterion = nn.MSELoss()
 
+    if opt.cuda:
+        torch.cuda.set_device(opt.gpuids[0])
+        with torch.cuda.device(opt.gpuids[0]):
+            model = model.cuda()
+            criterion = criterion.cuda()
+        model = nn.DataParallel(model, device_ids=opt.gpuids,
+                                output_device=opt.gpuids[0])
 
-if(use_cuda):
-    torch.cuda.set_device(opt.gpuids[0])
-    with torch.cuda.device(opt.gpuids[0]):
-        vdsr = vdsr.cuda()
-        criterion = criterion.cuda()
-    vdsr = nn.DataParallel(vdsr, device_ids=opt.gpuids,
-                           output_device=opt.gpuids[0])
+    optimizer = optim.Adam(model.parameters(), lr=opt.lr,
+                           weight_decay=opt.weight_decay)
 
+    if opt.test:
+        model_name = join("model", opt.model)
+        model = torch.load(model_name)
+        start_time = time.time()
+        test(model, criterion, testing_data_loader)
+        elapsed_time = time.time() - start_time
+        print("===> average {:.2f} image/sec for processing".format(
+            100.0/elapsed_time))
+        return
 
-optimizer = optim.Adam(vdsr.parameters(), lr=opt.lr,
-                       weight_decay=opt.weight_decay)
+    for epoch in range(1, opt.epochs + 1):
+        train(model, criterion, epoch, optimizer, training_data_loader)
+        validate(model, criterion, validating_data_loader)
+        if epoch % 10 == 0:
+            checkpoint(model, epoch)
 
 
 def adjust_learning_rate(epoch):
@@ -86,7 +107,7 @@ def adjust_learning_rate(epoch):
     return lr
 
 
-def train(epoch):
+def train(model, criterion, epoch, optimizer, training_data_loader):
     lr = adjust_learning_rate(epoch-1)
 
     for param_group in optimizer.param_groups:
@@ -98,34 +119,50 @@ def train(epoch):
     for iteration, batch in enumerate(training_data_loader, 1):
         input, target = Variable(batch[0]), Variable(
             batch[1], requires_grad=False)
-        if use_cuda:
+        if opt.cuda:
             input = input.cuda()
             target = target.cuda()
 
         optimizer.zero_grad()
-        model_out = vdsr(input)
+        model_out = model(input)
         loss = criterion(model_out, target)
         epoch_loss += loss.item()
         loss.backward()
-        nn.utils.clip_grad_norm_(vdsr.parameters(), opt.clip/lr)
+        nn.utils.clip_grad_norm_(model.parameters(), opt.clip/lr)
         optimizer.step()
 
-        print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch,
-                                                           iteration, len(training_data_loader), loss.item()))
+        print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(
+            epoch, iteration, len(training_data_loader), loss.item()))
 
     print("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(
         epoch, epoch_loss / len(training_data_loader)))
 
 
-def test():
+def validate(model, criterion, validating_data_loader):
     avg_psnr = 0
-    for batch in testing_data_loader:
+    for batch in validating_data_loader:
         input, target = Variable(batch[0]), Variable(batch[1])
-        if use_cuda:
+        if opt.cuda:
             input = input.cuda()
             target = target.cuda()
 
-        prediction = vdsr(input)
+        prediction = model(input)
+        mse = criterion(prediction, target)
+        psnr = 10 * log10(1.0 / mse.item())
+        avg_psnr += psnr
+    print("===> Avg. PSNR: {:.4f} dB".format(
+        avg_psnr / len(validating_data_loader)))
+
+
+def test(model, criterion, testing_data_loader):
+    avg_psnr = 0
+    for batch in testing_data_loader:
+        input, target = Variable(batch[0]), Variable(batch[1])
+        if opt.cuda:
+            input = input.cuda()
+            target = target.cuda()
+
+        prediction = model(input)
         mse = criterion(prediction, target)
         psnr = 10 * log10(1.0 / mse.item())
         avg_psnr += psnr
@@ -133,7 +170,7 @@ def test():
         avg_psnr / len(testing_data_loader)))
 
 
-def checkpoint(epoch):
+def checkpoint(model, epoch):
     try:
         if not(os.path.isdir('model')):
             os.makedirs(os.path.join('model'))
@@ -143,12 +180,9 @@ def checkpoint(epoch):
             raise
 
     model_out_path = "model/model_epoch_{}.pth".format(epoch)
-    torch.save(vdsr, model_out_path)
+    torch.save(model, model_out_path)
     print("Checkpoint saved to {}".format(model_out_path))
 
 
-for epoch in range(1, opt.epochs + 1):
-    train(epoch)
-    test()
-    if epoch % 10 == 0:
-        checkpoint(epoch)
+if __name__ == '__main__':
+    main()
