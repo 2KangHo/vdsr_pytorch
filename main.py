@@ -1,6 +1,6 @@
 from __future__ import print_function
 import argparse
-from math import log10
+from math import log10, sqrt
 import os
 from os import errno
 
@@ -24,8 +24,8 @@ parser.add_argument('--test_batch_size', type=int,
                     default=10, help='testing batch size')
 parser.add_argument('--epochs', type=int, default=100,
                     help='number of epochs to train for')
-parser.add_argument('--lr', type=float, default=0.01,
-                    help='Learning Rate. Default=0.01')
+parser.add_argument('--lr', type=float, default=0.001,
+                    help='Learning Rate. Default=0.001')
 parser.add_argument("--step", type=int, default=10,
                     help="Sets the learning rate to the initial LR decayed by momentum every n epochs, Default: n=10")
 parser.add_argument("--clip", type=float, default=0.4,
@@ -127,7 +127,7 @@ def test():
 
         prediction = vdsr(input)
         mse = criterion(prediction, target)
-        psnr = 10 * log10(1 / mse.item())
+        psnr = 10 * log10(1.0 / mse.item())
         avg_psnr += psnr
     print("===> Avg. PSNR: {:.4f} dB".format(
         avg_psnr / len(testing_data_loader)))
