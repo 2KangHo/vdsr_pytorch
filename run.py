@@ -3,6 +3,7 @@ from os.path import join
 import argparse
 import torch
 import torch.nn as nn
+import time
 import math
 from torch.autograd import Variable
 from PIL import Image
@@ -46,7 +47,10 @@ model = nn.DataParallel(model, device_ids=opt.gpuids,
 if opt.cuda:
     input = input.cuda()
 
+start_time = time.time()
 out = model(input)
+elapsed_time = time.time() - start_time
+print("===> It takes {:.4f} seconds.".format(elapsed_time))
 out = out.cpu()
 
 print("type = ", type(out))
