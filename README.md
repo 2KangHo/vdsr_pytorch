@@ -1,8 +1,6 @@
 # vdsr_pytorch
 
-PyTorch Implementation  
-1대1비율의 사진을 2대1비율의 사진으로 만듦.  
-progressive영상을 interlaced영상으로 만드는느낌.
+PyTorch Implementation
 
 ## Requirement
 
@@ -36,4 +34,6 @@ or
 
 ## 주의
 
-sample에서 input image는 학습에 사용된 BSDS300 data가 아닌 인터넷에서 가져온 이미지 등 다른 이미지를 사용해야 정확한 성능을 확인할 수 있다.
+test시에는 Urban100의 데이터가 사용된다.  
+sample에서 input image는 학습에 사용된 BSDS300 data가 아닌 인터넷에서 가져온 이미지 등 다른 이미지를 사용해야 정확한 성능을 확인할 수 있다.  
+Urban100데이터는 학습시 사용하지 않으므로 Urban100의 사진들 중 하나를 사용해도 됨.
