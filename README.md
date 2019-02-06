@@ -1,6 +1,8 @@
 # vdsr_pytorch
 
-PyTorch Implementation
+PyTorch Implementation  
+no muliti-scale  
+but you can use multi-GPUs
 
 ## Requirement
 
