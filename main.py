@@ -16,15 +16,18 @@ from data import get_training_set, get_validation_set, get_test_set
 from model import VDSR
 
 
-parser = argparse.ArgumentParser(
-    description='PyTorch VDSR')
+parser = argparse.ArgumentParser(description='PyTorch VDSR')
+parser.add_argument('--dataset', type=str, default='BSDS300',
+                    required=True, help="dataset directory name")
+parser.add_argument('--crop_size', type=int, default=256,
+                    required=True, help="network input size")
 parser.add_argument('--upscale_factor', type=int, default=2,
                     required=True, help="super resolution upscale factor")
-parser.add_argument('--batch_size', type=int, default=64,
-                    help='training batch size')
+parser.add_argument('--batch_size', type=int, default=128,
+                    help="training batch size")
 parser.add_argument('--test_batch_size', type=int,
-                    default=10, help='testing batch size')
-parser.add_argument('--epochs', type=int, default=100,
+                    default=32, help="testing batch size")
+parser.add_argument('--epochs', type=int, default=10,
                     help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.001,
                     help='Learning Rate. Default=0.001')
@@ -35,7 +38,7 @@ parser.add_argument("--clip", type=float, default=0.4,
 parser.add_argument("--weight-decay", "--wd", default=1e-4,
                     type=float, help="Weight decay, Default: 1e-4")
 parser.add_argument('--cuda', action='store_true', help='use cuda?')
-parser.add_argument('--threads', type=int, default=16,
+parser.add_argument('--threads', type=int, default=128,
                     help='number of threads for data loader to use')
 parser.add_argument('--gpuids', default=[0], nargs='+',
                     help='GPU ID for using')
@@ -57,12 +60,15 @@ def main():
 
     if opt.cuda and not torch.cuda.is_available():
         raise Exception("No GPU found, please run without --cuda")
+
     cudnn.benchmark = True
 
-    train_set = get_training_set(
+    train_set = get_training_set(opt.dataset, opt.crop_size,
         opt.upscale_factor, opt.add_noise, opt.noise_std)
-    validation_set = get_validation_set(opt.upscale_factor)
-    test_set = get_test_set(opt.upscale_factor)
+    validation_set = get_validation_set(
+        opt.dataset, opt.crop_size, opt.upscale_factor)
+    test_set = get_test_set(
+        opt.dataset, opt.crop_size, opt.upscale_factor)
     training_data_loader = DataLoader(
         dataset=train_set, num_workers=opt.threads, batch_size=opt.batch_size, shuffle=True)
     validating_data_loader = DataLoader(
@@ -90,15 +96,33 @@ def main():
         start_time = time.time()
         test(model, criterion, testing_data_loader)
         elapsed_time = time.time() - start_time
-        print("===> average {:.2f} image/sec for processing".format(
+        print("===> average {:.2f} image/sec for test".format(
             100.0/elapsed_time))
         return
 
+    train_time = 0.0
+    validate_time = 0.0
     for epoch in range(1, opt.epochs + 1):
+        start_time = time.time()
         train(model, criterion, epoch, optimizer, training_data_loader)
+        elapsed_time = time.time() - start_time
+        train_time += elapsed_time
+        print("===> {:.2f} seconds to train this epoch".format(
+            elapsed_time))
+        start_time = time.time()
         validate(model, criterion, validating_data_loader)
+        elapsed_time = time.time() - start_time
+        validate_time += elapsed_time
+        print("===> {:.2f} seconds to validate this epoch".format(
+            elapsed_time))
         if epoch % 10 == 0:
             checkpoint(model, epoch)
+
+    print("===> average training time per epoch: {:.2f} seconds".format(train_time/opt.epochs))
+    print("===> average validation time per epoch: {:.2f} seconds".format(validate_time/opt.epochs))
+    print("===> training time: {:.2f} seconds".format(train_time))
+    print("===> validation time: {:.2f} seconds".format(validate_time))
+    print("===> total training time: {:.2f} seconds".format(train_time+validate_time))
 
 
 def adjust_learning_rate(epoch):
@@ -185,4 +209,7 @@ def checkpoint(model, epoch):
 
 
 if __name__ == '__main__':
+    start_time = time.time()
     main()
+    elapsed_time = time.time() - start_time
+    print("===> total time: {:.2f} seconds".format(elapsed_time))

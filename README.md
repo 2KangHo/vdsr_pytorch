@@ -1,41 +1,30 @@
-# vdsr_pytorch
-
-PyTorch Implementation  
-no muliti-scale  
-but you can use multi-GPUs
+# vdsr_pytorch_lms
+VDSR PyTorch Implementation  
+You can use multi-gpus.  
+but no multi-scale.
+And you can input gaussian noise to input images.
 
 ## Requirement
-
 `torch`  
 `torchvision`  
-`python-tk` (or `pyhton3-tk`)
+`python-tk` (or `python3-tk`)
+
+## Download dataset
+1. Download [DF2K dataset](https://drive.google.com/file/d/1P9pcaGjvq3xiF22GXIq7ciZta3rjZxaY/view?usp=sharing).
+2. move under dataset directory i.e. vdsr_pytorch_lms/dataset/DF2K
 
 ## Training
-
-    > python main.py --batch_size 40 --test_batch_size 10 --epochs 100 --cuda --gpuids 0 --upscale_factor 2
-
-or
-
-    > python3 main.py --batch_size 40 --test_batch_size 10 --epochs 100 --cuda --gpuids 0 --upscale_factor 2
+```
+$ python main.py --dataset DF2K --cuda --gpuids 0 1 --upscale_factor 2 --crop_size 256 --batch_size 128 --test_batch_size 32
+```
 
 ## Test
+```
+$ python main.py --dataset Urban100 --cuda --gpuids 0 1 --upscale_factor 2 --crop_size 256 --test_batch_size 32 --test --model model_epoch_100.pth
+```
 
-    > python main.py --batch_size 40 --test_batch_size 10 --epochs 100 --cuda --gpuids 0 --upscale_factor 2 --test --model model_epoch_100.pth
+## Sample usage
+```
+$ python run.py --cuda --gpuids 0 1 --scale_factor 2 --model model_epoch_100.pth --input_image test_scale2x.jpg --output_filename test_scale2x_out.jpg
+```
 
-or
-
-    > python3 main.py --batch_size 40 --test_batch_size 10 --epochs 100 --cuda --gpuids 0 --upscale_factor 2 --test --model model_epoch_100.pth
-
-## Sample Usage
-
-    > python run.py --input_image test_scale2x.jpg --scale_factor 2 --model model_epoch_100.pth --cuda --gpuids 0 --output_filename test_scale2x_out.jpg
-
-or
-
-    > python3 run.py --input_image test_scale2x.jpg --scale_factor 2 --model model_epoch_100.pth --cuda --gpuids 0 --output_filename test_scale2x_out.jpg
-
-## 주의
-
-test시에는 Urban100의 데이터가 사용된다.  
-sample에서 input image는 학습에 사용된 BSDS300 data가 아닌 인터넷에서 가져온 이미지 등 다른 이미지를 사용해야 정확한 성능을 확인할 수 있다.  
-Urban100데이터는 학습시 사용하지 않으므로 Urban100의 사진들 중 하나를 사용해도 됨.
