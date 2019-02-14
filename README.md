@@ -1,4 +1,4 @@
-# vdsr_pytorch_lms
+# vdsr_pytorch
 VDSR PyTorch Implementation  
 You can use multi-gpus.  
 but no multi-scale.  
