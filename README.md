@@ -1,7 +1,7 @@
 # vdsr_pytorch_lms
 VDSR PyTorch Implementation  
 You can use multi-gpus.  
-but no multi-scale.
+but no multi-scale.  
 And you can input gaussian noise to input images.
 
 ## Requirement
