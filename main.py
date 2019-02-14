@@ -27,7 +27,7 @@ parser.add_argument('--batch_size', type=int, default=128,
                     help="training batch size")
 parser.add_argument('--test_batch_size', type=int,
                     default=32, help="testing batch size")
-parser.add_argument('--epochs', type=int, default=10,
+parser.add_argument('--epochs', type=int, default=100,
                     help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.001,
                     help='Learning Rate. Default=0.001')
@@ -38,7 +38,7 @@ parser.add_argument("--clip", type=float, default=0.4,
 parser.add_argument("--weight-decay", "--wd", default=1e-4,
                     type=float, help="Weight decay, Default: 1e-4")
 parser.add_argument('--cuda', action='store_true', help='use cuda?')
-parser.add_argument('--threads', type=int, default=128,
+parser.add_argument('--threads', type=int, default=16,
                     help='number of threads for data loader to use')
 parser.add_argument('--gpuids', default=[0], nargs='+',
                     help='GPU ID for using')
