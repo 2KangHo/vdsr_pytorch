@@ -61,7 +61,7 @@ or
 > python3 main.py --dataset DF2K --cuda --gpuids 0 1 --upscale_factor 2 --crop_size 256 --batch_size 128 --test_batch_size 32 --epochs 100
 ```
 
-### Example for evaluation
+#### Example for evaluation
 ```
 > python main.py --dataset Urban100 --cuda --gpuids 0 1 --upscale_factor 2 --crop_size 256 --test_batch_size 32 --test --model model_epoch_100.pth
 ```
