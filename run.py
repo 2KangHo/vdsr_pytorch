@@ -12,7 +12,7 @@ from torchvision.transforms import ToTensor
 import numpy as np
 
 # Training settings
-parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
+parser = argparse.ArgumentParser(description='VDSR PyTorch')
 parser.add_argument('--input_image', type=str,
                     required=True, help='input image to use')
 parser.add_argument('--model', type=str, required=True,
