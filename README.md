@@ -99,4 +99,3 @@ or
 ```
 > python3 run.py --cuda --gpuids 0 1 --scale_factor 2 --model model_epoch_100.pth --input_image test_scale2x.jpg --output_filename test_scale2x_out.jpg
 ```
-
