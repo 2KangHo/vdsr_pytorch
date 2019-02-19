@@ -11,8 +11,8 @@ from PIL import Image
 from torchvision.transforms import ToTensor
 import numpy as np
 
-# Training settings
-parser = argparse.ArgumentParser(description='VDSR PyTorch')
+# Demonstration settings
+parser = argparse.ArgumentParser(description='VDSR PyTorch Demonstration')
 parser.add_argument('--input_image', type=str,
                     required=True, help='input image to use')
 parser.add_argument('--model', type=str, required=True,
